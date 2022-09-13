@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Sep 12 10:46:29 2022
 
-@author: stefa
-"""
-
-import requests # Python 3.6
-import pandas as pd          # pandas version 0.23
-
-# default URL
+# default URL# -*- coding: utf-8 -*-
+# """
+# Created on Mon Sep 12 10:46:29 2022
+#
+# @author: stefa
+# """
+#
+import requests
+import pandas as pd
 url = 'http://dataservices.imf.org/REST/SDMX_JSON.svc/'
 
 # list of country codes: https://www.nationsonline.org/oneworld/country_code_list.htm
@@ -99,7 +98,7 @@ x = 0;
 while x < 247:
     country = country_codes[x]
     x += 1
-    key = f'CompactData/DOT/A.{country}.TXG_FOB_USD.US+CA' 
+    key = f'CompactData/DOT/A.{country}.TXG_FOB_USD.US+CA'
     print(key)
     #if country == "AS" or country == "AW":
     #    continue
@@ -107,14 +106,41 @@ while x < 247:
     # different data sets
     #data = country + '_export' # the name for the dataframe
     #filename = "data_{}.json".format(country)
-    
-    # Retrieve data from IMF API
-    data = requests.get(f'{url}{key}').json()
-    # Convert results to pandas dataframe ---> how to create a separate dataframe for every country?
-    df = pd.DataFrame({s['@COUNTERPART_AREA'] : {pd.to_datetime(i['@TIME_PERIOD']) : 
-     round(float(i['@OBS_VALUE']), 1) for i in s['Obs']} 
-     for s in data['CompactData']['DataSet']['Series']})
-
+    try:
+        # Retrieve data from IMF API
+        data = requests.get(f'{url}{key}').json()
+        # Convert results to pandas dataframe ---> how to create a separate dataframe for every country?
+        df = pd.DataFrame({s['@COUNTERPART_AREA'] : {pd.to_datetime(i['@TIME_PERIOD']) :
+         round(float(i['@OBS_VALUE']), 1) for i in s['Obs']}
+         for s in data['CompactData']['DataSet']['Series']})
+    except:
+        print(f'Problem getting {url}{key}')
 ##### SOUFIANE EXAMPLE:
 ##### CompactData/DOT/A.AS.TXG_FOB_USD.US+CA --> AS-US or AS-CA (AS = American Samoa); apparently, there is not data for one of those two pairs -- how do I determine whether
 # the JSON file contains the pair and how can I automatically skip it if it is not in 'data'?
+
+
+## Double loop  CONT HERE
+test = pd.DataFrame()
+
+for x in country_codes[:1]:
+    print(f'x is {x}')
+    for y in country_codes:
+        print(f'y is {y}')
+        if not x == y:
+            key = f'CompactData/DOT/A.{x}.TXG_FOB_USD.{y}'
+            try:
+                data = requests.get(f'{url}{key}').json()
+                #df = pd.DataFrame({s['@COUNTERPART_AREA'] : {pd.to_datetime(i['@TIME_PERIOD']) :
+                # round(float(i['@OBS_VALUE']), 1) for i in s['Obs']}
+                # for s in data['CompactData']['DataSet']['Series']})
+                oneSerie = data['CompactData']['DataSet']['Series']
+                for i in data['CompactData']['DataSet']['Series']['Obs']:
+                    df = pd.DataFrame({oneSerie['@COUNTERPART_AREA'] : {pd.to_datetime(i['@TIME_PERIOD']): round(float(i['@OBS_VALUE']), 1)}})
+                    test.append(df)    ## name df differently, and create new columns
+                    print(f'Success with {y}')
+            except:
+                print(f'Error in {url}{key}')
+
+
+## how to comment out on a germany keyboard?
