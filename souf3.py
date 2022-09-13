@@ -114,5 +114,7 @@ while x < 247:
     df = pd.DataFrame({s['@COUNTERPART_AREA'] : {pd.to_datetime(i['@TIME_PERIOD']) : 
      round(float(i['@OBS_VALUE']), 1) for i in s['Obs']} 
      for s in data['CompactData']['DataSet']['Series']})
-    
-##### CompactData/DOT/A.AS.TXG_FOB_USD.US+CA --> AS-US or AS-CA (AS = American Samoa); I can skip AS, but how do I automate it?
+
+##### SOUFIANE EXAMPLE:
+##### CompactData/DOT/A.AS.TXG_FOB_USD.US+CA --> AS-US or AS-CA (AS = American Samoa); apparently, there is not data for one of those two pairs -- how do I determine whether
+# the JSON file contains the pair and how can I automatically skip it if it is not in 'data'?
