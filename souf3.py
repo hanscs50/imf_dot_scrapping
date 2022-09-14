@@ -120,6 +120,15 @@ while x < 247:
 # the JSON file contains the pair and how can I automatically skip it if it is not in 'data'?
 
 
+
+## Dictionary of dataframes
+
+## dictionary
+
+country_dict = {}
+for name in country_codes:
+    country_dict[name] = pd.DataFrame()
+    
 ## Double loop  CONT HERE
 test = pd.DataFrame()
 
@@ -137,10 +146,12 @@ for x in country_codes[:1]:
                 oneSerie = data['CompactData']['DataSet']['Series']
                 for i in data['CompactData']['DataSet']['Series']['Obs']:
                     df = pd.DataFrame({oneSerie['@COUNTERPART_AREA'] : {pd.to_datetime(i['@TIME_PERIOD']): round(float(i['@OBS_VALUE']), 1)}})
-                    test.append(df)    ## name df differently, and create new columns
-                    print(f'Success with {y}')
+                country_dict[y] = df   ## only last year is saved in column
+                print(f'Success with {y}')
             except:
                 print(f'Error in {url}{key}')
+
+print(country_dict['US'])       ## only 2021 is recorded.
 
 
 ## how to comment out on a germany keyboard?
