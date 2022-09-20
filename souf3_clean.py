@@ -7,6 +7,8 @@ Created on Sun Sep 18 10:37:32 2022
 
 import requests
 import pandas as pd
+import os
+import ast
 url = 'http://dataservices.imf.org/REST/SDMX_JSON.svc/'
 
 # list of country codes: https://www.nationsonline.org/oneworld/country_code_list.htm
@@ -83,6 +85,10 @@ for x in country_codes:
                 print(f'Error in {url}{key}:\n')
                 #print(data)
 
+ 
+
+#country_dict.items()
+
 for i in country_dict:
     value = []
     value_flat = [] 
@@ -90,20 +96,28 @@ for i in country_dict:
     time_flat = []
     #if i == 'AF':
      #print(country_dict[i]['Obs'])
-    try:
-        print(i)
-        ## export value
-        value.append([d.get('@OBS_VALUE') for d in country_dict[i]['Obs']])
-        value_flat = [item for sublist in value for item in sublist]
-        ## year
-        time.append([d.get('@TIME_PERIOD') for d in country_dict[i]['Obs']])
-        time_flat = [item for sublist in time for item in sublist]
-        #value_flat = pd.Series(value_flat)
-        country_dict[i]['Export Values'] = value_flat
-        country_dict[i]['Year'] = time_flat
-    except:
-        print(f'Error in {i}:\n')
+    if country_dict[i].empty == True:
+        print(f'{i} is empty')
+        continue
+    else:
+        try:
+            print(f'i is {i}')
+            print(f'country_dict[i] is {country_dict[i]}')
+            ## export value
+            value.append([d.get('@OBS_VALUE') for d in country_dict[i]['Obs']])
+            value_flat = [item for sublist in value for item in sublist]
+            ## year
+            time.append([d.get('@TIME_PERIOD') for d in country_dict[i]['Obs']])
+            time_flat = [item for sublist in time for item in sublist]
+            #value_flat = pd.Series(value_flat)
+            country_dict[i]['Export Values'] = value_flat
+            country_dict[i]['Year'] = time_flat
+        except:
+            print(f'Error in {i}:\n')
     
+    break
+
+
 ## remove empty dataframes from dict
 country_dict = {k:v for (k,v) in country_dict.items() if not v.empty}
 
@@ -118,10 +132,65 @@ for df in country_dict.values():
   
 
 ## save to disk
-import os
+
 
 os.chdir('E:/work_other/UvA IMF DOT/data/python')
 for file in country_dict:
     print(file.name)
     country_dict[file].to_csv(f"{file}_IMF.csv")
+    
+# # clean up not updated frames
 
+
+directory = 'E:/work_other/UvA IMF DOT/data/python/A-M/wip'
+os.chdir(directory)
+os.getcwd()
+
+for filename in os.listdir(directory):
+    f = os.path.join(directory, filename)
+    df = pd.read_csv(f)
+    try:
+        df2 = df["Obs"].astype('str')
+        df2 = df2.apply(lambda x: ast.literal_eval(x))
+        df2 = df2.apply(pd.Series)
+        df2['@INDICATOR'] = df['@INDICATOR']
+        df2['@COUNTERPART_AREA'] = df['@COUNTERPART_AREA']
+        df2['@REF_AREA'] = df['@REF_AREA']
+        df2.rename(columns ={'@TIME_PERIOD' : 'year', '@OBS_VALUE' : 'exportvalues'}, inplace=True)
+        print(fr'{directory}/{filename}')
+        df2.to_csv(fr"{directory}/{filename}")
+    except:
+         print(f'still error in {filename}')
+         
+## configure tables with only one obs (different format somehow)
+
+directory = 'E:/work_other/UvA IMF DOT/data/python/A-M/wip'
+for filename in os.listdir(directory):
+    f = os.path.join(directory, filename)
+    print(f)
+    df = pd.read_csv(f)
+    # check whether really just one year
+    if len(df.index) == 3:
+
+        #df2 = pd.DataFrame(columns = ['year', 'exportvalues'])
+        print(df.at[2, 'Obs'])
+        print(df.iloc[[2], [7]])
+        d = {'@REF_AREA': df.at[0,'@REF_AREA'], '@INDICATOR': df.at[0,'@INDICATOR'],
+             'COUNTERPART_AREA' : df.at[0,'@COUNTERPART_AREA'], 
+             'year' : df.at[2,'Obs'], 'exportvalues' : df.at[1,'Obs']}
+        df2 = pd.DataFrame(d, index=[0])
+        df2.to_csv(f)
+    else:
+        print(f'legtnh of {filename} more than 3')
+
+
+## check whether all csvs marked as empty are indeed empty
+
+
+directory = 'E:/work_other/UvA IMF DOT/data/python/A-M/empty'
+for filename in os.listdir(directory):
+    f = os.path.join(directory, filename)
+    #print(f)
+    df = pd.read_csv(f)
+    if df.empty != True:
+        print(f'{f} is not empty')
